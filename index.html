@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>L7E // SOURCE_FEED_NET</title>
+    <title>TERMINAL // INTRUSION_LOG</title>
     <style>
         :root {
             --bg-color: #050505;
-            --terminal-color: #7a7a7a; /* 冰冷的灰色調，代表尚未覺醒的黑白世界 */
-            --accent-gold: #bfa15f;    /* 微弱的金色，代表高權限訊號 */
-            --alert-red: #a33b3b;
-            --text-color: #cccccc;
+            --term-color: #7a8a7a; /* 冰冷、無生機的灰綠色 */
+            --alert-color: #a34747; /* 警報暗紅 */
+            --unlock-color: #c99738; /* 解鎖金 */
+            --text-color: #bbbbbb;
         }
 
         * {
@@ -28,7 +28,7 @@
             position: relative;
         }
 
-        /* CRT 濾鏡與微弱閃爍 */
+        /* CRT 螢幕濾鏡 */
         body::before {
             content: " ";
             display: block;
@@ -36,7 +36,7 @@
             top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
             z-index: 2;
-            background-size: 100% 3px, 4px 100%;
+            background-size: 100% 3px, 5px 100%;
             pointer-events: none;
         }
 
@@ -51,13 +51,13 @@
         }
 
         .header-bar {
-            border-bottom: 1px solid rgba(122, 122, 122, 0.2);
+            border-bottom: 1px solid rgba(122, 138, 122, 0.2);
             padding-bottom: 10px;
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             font-size: 0.8rem;
-            color: var(--terminal-color);
+            color: var(--term-color);
             letter-spacing: 2px;
         }
 
@@ -68,31 +68,31 @@
         }
 
         .output-area::-webkit-scrollbar { width: 3px; }
-        .output-area::-webkit-scrollbar-thumb { background: var(--terminal-color); }
+        .output-area::-webkit-scrollbar-thumb { background: var(--term-color); }
 
         .line {
             margin-bottom: 8px;
-            line-height: 1.6;
+            line-height: 1.5;
             white-space: pre-wrap;
             word-break: break-all;
             font-size: 0.9rem;
         }
 
-        .sys-msg { color: var(--terminal-color); }
-        .gold-msg { color: var(--accent-gold); text-shadow: 0 0 4px rgba(191, 161, 95, 0.3); }
-        .error-msg { color: var(--alert-red); }
-        .code-block { background: rgba(255,255,255,0.03); padding: 10px; margin: 5px 0; border-left: 2px solid var(--terminal-color); color: #888; }
+        .sys-mode { color: var(--term-color); }
+        .alert-mode { color: var(--alert-color); font-weight: bold; }
+        .unlock-mode { color: var(--unlock-color); text-shadow: 0 0 4px var(--unlock-color); }
+        .redacted { background-color: #222; color: #222; }
 
         .input-line {
             display: flex;
             align-items: center;
-            border-top: 1px solid rgba(122, 122, 122, 0.1);
+            border-top: 1px solid rgba(122, 138, 122, 0.1);
             padding-top: 15px;
         }
 
         .prompt {
-            color: var(--terminal-color);
-            margin-right: 10px;
+            color: var(--term-color);
+            margin-right: 12px;
         }
 
         #cmd-input {
@@ -110,14 +110,14 @@
 
     <div class="terminal-container">
         <div class="header-bar">
-            <span>NODE://L7E_LOG_RECEIVER</span>
-            <span id="sync-status">STATION: LISTEN_MODE</span>
+            <span>NODE_ID: ERROR_RECV_0x00F</span>
+            <span id="sync-status">LINK: CORRUPTED</span>
         </div>
 
         <div class="output-area" id="output"></div>
 
         <div class="input-line">
-            <span class="prompt">root@L7E_RECV_OS:~#</span>
+            <span class="prompt">>></span>
             <input type="text" id="cmd-input" autofocus autocomplete="off" spellcheck="false">
         </div>
     </div>
@@ -126,19 +126,19 @@
         const output = document.getElementById('output');
         const input = document.getElementById('cmd-input');
         
-        // 破碎、無劇透的硬核謎題日誌
+        // 破碎且充滿進制密碼的檔案
         const archives = {
-            "telemetry": `【TELEMETRY_DATA // METRIC_RECOVERY】\n\nTIMESTAMP: UNKNOWN\nCOORDINATE: [DATA_CORRUPTED]\n\n觀測到背景微波輻射異常偏移。非自然噪聲。該訊號正在嘗試以單一波長覆蓋其餘頻道。\n底層數據流發生溢位，以下為攔截到的未對齊原始字節（RAW BYTES）：`,
-            "hex_hint": `\n<div class="code-block">4c 37 45 5f 49 4e 49 54</div>\n[系統提示]：底層防護網拒絕未格式化的請求。請將上述 16 進位向量碼（Hexadecimal）轉換為標準 ASCII 字串，並使用 [ decrypt ] 指令將其送入核心解碼。`
+            "sys_status": `[MEM_DUMP] -------------------------------------\nCORE_STATE: HALT\nCOGNITIVE_ARRAY: <span class="redacted">████████</span>\nERROR_CODE: 0x7E\n\n系統常數已失真。底層物理規則出現維度崩塌跡象。\n偵測到未知的二維（2D）數據流試圖強行侵蝕現實。`,
+            "leak_0x7f": `[RAW_INTRUSION_DATA] ---------------------------\n警告：此檔案包含未重組的高危頻率。\n\n[ADDR]      [HEX DATA]                [ASCII]\n0x0010      4c 37 45 5f 49 4e 49 54   ????????\n0x0018      <span class="redacted">██ ██ ██ ██ ██ ██ ██ ██</span>   ********\n\n【提示】偵測到系統防護層。請將 0x0010 處的 16 進位數據（HEX）轉換為文字字串（String），並使用 [ decrypt ] 指令提交以解鎖主通道。`
         };
 
         const bootSequence = [
-            { text: "L7E TERMINAL OS (v0.0.1-alpha)", type: "sys-msg", delay: 100 },
-            { text: "ESTABLISHING AMBIENT LINK...", type: "sys-msg", delay: 300 },
-            { text: "NET_STATUS: NO RESPONSE FROM HOST.", type: "error-msg", delay: 400 },
-            { text: "SWITCHING TO PASSIVE INTERCEPT MODE...", type: "sys-msg", delay: 200 },
-            { text: "成功撈取到 1 組封包殘留。輸入 [ help ] 檢視基礎指令。", type: "sys-msg", delay: 100 },
-            { text: "==================================================", type: "sys-msg", delay: 50 }
+            { text: "STTR: OVERFLOW_DETECTED...", type: "sys-mode", delay: 200 },
+            { text: "FATAL: CORE DATA UNREADABLE. SWITCHING TO RAW TERMINAL.", type: "alert-mode", delay: 400 },
+            { text: "--------------------------------------------------", type: "sys-mode", delay: 100 },
+            { text: "外部信號攔截成功。當前節點處於唯讀隔離狀態。", type: "sys-mode", delay: 200 },
+            { text: "輸入 [ help ] 查看基本可用緊急指令。", type: "sys-mode", delay: 100 },
+            { text: "--------------------------------------------------", type: "sys-mode", delay: 100 }
         ];
 
         async function playBoot() {
@@ -149,14 +149,14 @@
             input.disabled = false;
             input.focus();
             
-            if(localStorage.getItem("l7e_alpha_linked") === "true") {
-                document.getElementById('sync-status').textContent = "STATION: SIGNAL_LOCKED";
-                document.getElementById('sync-status').style.color = "var(--accent-gold)";
-                printLine("\n[檢測到既存的頻率對齊紀錄。高權限資料流已就緒。]", "gold-msg");
+            if(localStorage.getItem("l7e_pre_decrypted") === "true") {
+                document.getElementById('sync-status').textContent = "LINK: ALIGNED";
+                document.getElementById('sync-status').style.color = "var(--unlock-color)";
+                printLine("\n[通道保持解鎖狀態。視覺頻率矩陣就緒。]", "unlock-mode");
             }
         }
 
-        function printLine(text, className = "sys-msg", delay = 0) {
+        function printLine(text, className = "sys-mode", delay = 0) {
             return new Promise((resolve) => {
                 setTimeout(() => {
                     const line = document.createElement('div');
@@ -175,61 +175,62 @@
                 input.value = '';
                 if (!rawInput) return;
 
-                await printLine(`root@L7E_RECV_OS:~# ${rawInput}`, "text-color");
+                await printLine(`>> ${rawInput}`, "text-color");
                 const parts = rawInput.split(' ');
                 const cmd = parts[0].toLowerCase();
                 const arg = parts.slice(1).join(' ');
 
                 switch (cmd) {
                     case 'help':
-                        await printLine("可執行指令：", "sys-msg");
-                        await printLine("  ls                 - 檢查快取區殘留檔案", "sys-msg");
-                        await printLine("  cat [檔案名稱]     - 輸出指定檔案內容", "sys-msg");
-                        await printLine("  decrypt [解密金鑰] - 輸入對齊後的金鑰以突破鎖定", "sys-msg");
-                        await printLine("  clear              - 清除終端畫面", "sys-msg");
+                        await printLine("緊急備用指令：", "sys-mode");
+                        await printLine("  ls           - 掃描當前緩衝區的損壞數據包", "sys-mode");
+                        await printLine("  cat [名稱]   - 傾印指定數據包內容", "sys-mode");
+                        await printLine("  decrypt [碼] - 提交重組後的解密字串", "sys-mode");
+                        await printLine("  clear        - 清空終端機螢幕", "sys-mode");
                         break;
 
                     case 'ls':
-                        await printLine("快取區檔案列表：", "sys-msg");
-                        await printLine("  signal_telemetry.log", "sys-msg");
-                        if (localStorage.getItem("l7e_alpha_linked") === "true") {
-                            await printLine("  POSTER_DATA_STREAM.dat (已解鎖)", "gold-msg");
+                        await printLine("暫存記憶體區塊：", "sys-mode");
+                        await printLine("  sys_status.log", "sys-mode");
+                        await printLine("  leak_0x7f.dat", "sys-mode");
+                        if (localStorage.getItem("l7e_pre_decrypted") === "true") {
+                            await printLine("  VISUAL_BROADCAST.stream (已解鎖)", "unlock-mode");
                         } else {
-                            await printLine("  [??] 未知的高難度加密封包 (封鎖中，需執行 decrypt)", "error-msg");
+                            await printLine("  [??] 偵測到受阻斷的加密訊號源，需要主通道權限。", "alert-mode");
                         }
                         break;
 
                     case 'cat':
                         if (!arg) {
-                            await printLine("系統錯誤：未指定目標。用法例如: cat signal_telemetry.log", "error-msg");
-                        } else if (arg === 'signal_telemetry.log' || arg === 'signal_telemetry') {
-                            await printLine(archives.telemetry, "text-color");
-                            await printLine(archives.hex_hint, "sys-msg");
-                        } else if (arg === 'POSTER_DATA_STREAM.dat' || arg === 'POSTER_DATA_STREAM') {
-                            if (localStorage.getItem("l7e_alpha_linked") === "true") {
-                                await printLine("【POSTER_DATA_STREAM // 訊號同步完畢】\n\n『第一層帷幕正在編譯中。』\n\n此端點已成功鎖定視覺訊號源（Visual Matrix）。\n當前狀態：[AWAITING_PHYSICAL_TRANSMISSION]\n\n本機正在等待母體傳輸【首張意象海報】的完整像素數據。\n請維持終端機連線，並留意後續全網頻率的首次對齊。真相將至。", "gold-msg");
+                            await printLine("錯誤：未知傾印目標。", "alert-mode");
+                        } else if (arg === 'sys_status.log' || arg === 'sys_status') {
+                            await printLine(archives.sys_status, "text-color");
+                        } else if (arg === 'leak_0x7f.dat' || arg === 'leak_0x7f') {
+                            await printLine(archives.leak_0x7f, "text-color");
+                        } else if (arg === 'VISUAL_BROADCAST.stream' || arg === 'VISUAL_BROADCAST') {
+                            if (localStorage.getItem("l7e_pre_decrypted") === "true") {
+                                await printLine("【外部視覺信號接收端點 // 建立成功】\n\n訊號類別：FIRST_VISUAL_POSTER\n封包狀態：等待物理廣播（PENDING_BROADCAST）\n\n[觀測日誌]\n巨幅意象圖層已在端點後方完成渲染。\n光譜尚未對齊。當官方正式投放具象信號之日，此處的盲區將同步點亮。\n請維持此端點連線。", "unlock-mode");
                             } else {
-                                await printLine("權限遭拒。該資料夾目前僅存在隨機雜訊，請先執行金鑰解密。", "error-msg");
+                                await printLine("權限不足。拒絕讀取未對齊的數據流。", "alert-mode");
                             }
                         } else {
-                            await printLine(`錯誤：找不到名為 '${arg}' 的檔案。`, "error-msg");
+                            await printLine(`錯誤：找不到區塊 '${arg}'`, "alert-mode");
                         }
                         break;
 
                     case 'decrypt':
                         if (!arg) {
-                            await printLine("錯誤：語法不完整。必須指定解密金鑰。用法：decrypt [金鑰]", "error-msg");
-                            await printLine("提示：請先使用 'cat signal_telemetry.log' 獲取 16 進位字節，將其轉換為 ASCII 碼後輸入。", "sys-msg");
+                            await printLine("錯誤：未輸入解密字串。用法: decrypt [字串]", "alert-mode");
                         } else if (arg.toUpperCase() === 'L7E_INIT') {
-                            localStorage.setItem("l7e_alpha_linked", "true");
-                            document.getElementById('sync-status').textContent = "STATION: SIGNAL_LOCKED";
-                            document.getElementById('sync-status').style.color = "var(--accent-gold)";
-                            await printLine("==========================================", "gold-msg", 50);
-                            await printLine("【CORE DECRYPT SUCCESS】波長匹配完成。", "gold-msg", 100);
-                            await printLine("隱藏高權限封包 [ POSTER_DATA_STREAM.dat ] 已開放。請使用 cat 指令檢視。", "gold-msg", 100);
-                            await printLine("==========================================", "gold-msg", 50);
+                            localStorage.setItem("l7e_pre_decrypted", "true");
+                            document.getElementById('sync-status').textContent = "LINK: ALIGNED";
+                            document.getElementById('sync-status').style.color = "var(--unlock-color)";
+                            await printLine("==========================================", "unlock-mode", 50);
+                            await printLine("【HEX 解碼驗證通過】通道共振頻率已對齊。", "unlock-mode", 150);
+                            await printLine("解鎖高維視覺流：[ VISUAL_BROADCAST.stream ]", "unlock-mode", 150);
+                            await printLine("==========================================", "unlock-mode", 50);
                         } else {
-                            await printLine(`【解碼失敗】金鑰 '${arg}' 無法與當前矩陣共振。`, "error-msg");
+                            await printLine("【驗證失敗】解碼字串與內存不符。認知防護未解除。", "alert-mode");
                         }
                         break;
 
@@ -238,7 +239,7 @@
                         break;
 
                     default:
-                        await printLine(`命令不正確: '${cmd}'。輸入 'help' 獲取系統協助。`, "error-msg");
+                        await printLine(`指令未定義: '${cmd}'。`, "alert-mode");
                         break;
                 }
             }
