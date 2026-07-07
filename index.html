@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L7E // DATA_LEAK_TERMINAL</title>
+    <style>
+        :root {
+            --bg-color: #080808;
+            --terminal-gold: #c5a059; /* 暗金，低調的神秘感 */
+            --terminal-red: #9e2a2b;  /* 警告紅 */
+            --text-muted: #666666;
+            --text-main: #d1d1d1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* CRT 模擬與掃描線 */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 2;
+            background-size: 100% 3px, 6px 100%;
+            pointer-events: none;
+        }
+
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: rgba(18, 16, 16, 0.1);
+            opacity: 0;
+            z-index: 2;
+            pointer-events: none;
+            animation: flicker 0.2s infinite;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.15; }
+            50% { opacity: 0.25; }
+            100% { opacity: 0.15; }
+        }
+
+        .terminal-container {
+            width: 100%;
+            height: 100%;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            z-index: 1;
+            position: relative;
+        }
+
+        .header-bar {
+            border-bottom: 1px solid rgba(197, 160, 89, 0.3);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--terminal-gold);
+            letter-spacing: 1px;
+        }
+
+        .output-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            padding-right: 10px;
+        }
+
+        .output-area::-webkit-scrollbar { width: 4px; }
+        .output-area::-webkit-scrollbar-thumb { background: var(--terminal-gold); }
+
+        .line {
+            margin-bottom: 10px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 0.95rem;
+        }
+
+        .gold-msg { color: var(--terminal-gold); }
+        .error-msg { color: var(--terminal-red); font-weight: bold; }
+        .muted-msg { color: var(--text-muted); }
+        .redacted { background-color: #333; color: #333; padding: 0 3px; }
+
+        .input-line {
+            display: flex;
+            align-items: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+            padding-top: 15px;
+        }
+
+        .prompt {
+            color: var(--terminal-gold);
+            margin-right: 12px;
+            font-weight: bold;
+        }
+
+        #cmd-input {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 1rem;
+            flex-grow: 1;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="terminal-container">
+        <div class="header-bar">
+            <span>TERMINAL://UNKNOWN_SOURCE_LEAK</span>
+            <span id="sync-status">SIGNAL: INTERMITTENT</span>
+        </div>
+
+        <div class="output-area" id="output"></div>
+
+        <div class="input-line">
+            <span class="prompt">$</span>
+            <input type="text" id="cmd-input" autofocus autocomplete="off" spellcheck="false">
+        </div>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+        const input = document.getElementById('cmd-input');
+        
+        // 刻意模糊、破碎的檔案庫
+        const archives = {
+            "cognitive_drift": `【日誌截段：觀測編號-09】\n我們抵達了該區域。這裡的居民出現嚴重的認知同質化。\n每個人在他人眼中的形象已經完全固定。\n「他」今天試圖哭泣，但周圍的人都在笑。於是「他」的眼淚變成了笑聲。\n這不是心理疾病。這是這個世界的物理法則。人正在被他人的目光<span class="redacted">██████</span>。\n警告：若此現象持續，該個體將面臨 [BURNOUT] 風險。`,
+            "project_l7e": `【未命名計畫殘卷】\n最初的「七位」留下的並不是文明，而是殘缺的<span class="redacted">████</span>。\n我們在歷史的夾縫中尋找祂們的遺骸。\n但最大的諷刺是，我們建立宗教、發動戰爭、獻祭無數生命，試圖將其喚回。\n卻沒人發現，祂們從未離開，而是我們從未<span class="redacted">██████████</span>。`
+        };
+
+        const bootSequence = [
+            { text: "CONNECTING TO DISTANT SIGNAL...", type: "muted-msg", delay: 300 },
+            { text: "WARNING: PACKET LOSS DETECTED (40.4%)", type: "error-msg", delay: 500 },
+            { text: "RECOVERING CORRUPTED DATA NODES...", type: "muted-msg", delay: 400 },
+            { text: "SUCCESSFULLY RETRIEVED SUB-LEVEL MEMORY.", type: "gold-msg", delay: 300 },
+            { text: "--------------------------------------------------", type: "muted-msg", delay: 100 },
+            { text: "這裡似乎是某個遭到遺棄或刻意封鎖的觀測終端。", type: "gold-msg", delay: 200 },
+            { text: "數據嚴重受損。輸入 [ help ] 嘗試呼叫底層指令。", type: "gold-msg", delay: 100 },
+            { text: "--------------------------------------------------", type: "muted-msg", delay: 100 }
+        ];
+
+        async function playBoot() {
+            input.disabled = true;
+            for (let seq of bootSequence) {
+                await printLine(seq.text, seq.type, seq.delay);
+            }
+            input.disabled = false;
+            input.focus();
+            
+            if(localStorage.getItem("l7e_leak_decrypted") === "true") {
+                document.getElementById('sync-status').textContent = "SIGNAL: CAPTURED";
+                printLine("\n[偵測到已存在的解密頻率。視覺訊號重組通道已開啟。]", "gold-msg");
+            }
+        }
+
+        function printLine(text, className = "gold-msg", delay = 0) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const line = document.createElement('div');
+                    line.className = `line ${className}`;
+                    line.innerHTML = text; // 使用 innerHTML 允許顯示 redacted 黑塊
+                    output.appendChild(line);
+                    output.scrollTop = output.scrollHeight;
+                    resolve();
+                }, delay);
+            });
+        }
+
+        input.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') {
+                const rawInput = input.value.trim();
+                input.value = '';
+                if (!rawInput) return;
+
+                await printLine(`$ ${rawInput}`, "text-main");
+                const parts = rawInput.split(' ');
+                const cmd = parts[0].toLowerCase();
+                const arg = parts.slice(1).join(' ');
+
+                switch (cmd) {
+                    case 'help':
+                        await printLine("可用系統指令：", "gold-msg");
+                        await printLine("  ls       - 查看已撈取到的殘留數據碎塊", "gold-msg");
+                        await printLine("  cat [名] - 嘗試解讀指定碎塊檔", "gold-msg");
+                        await printLine("  decrypt  - 輸入頻率金鑰以重組未知信號", "gold-msg");
+                        await printLine("  clear    - 清空終端機螢幕", "gold-msg");
+                        break;
+
+                    case 'ls':
+                        await printLine("偵測到以下殘留數據包：", "gold-msg");
+                        await printLine("  cognitive_drift.log", "gold-msg");
+                        await printLine("  project_l7e.log", "gold-msg");
+                        if (localStorage.getItem("l7e_leak_decrypted") === "true") {
+                            await printLine("  VISUAL_SIGNAL_MATRIX.dat (已解鎖)", "gold-msg");
+                        } else {
+                            await printLine("  [??] 偵測到一組遭到高度加密的「視覺干擾源」，可能需要使用 decrypt 指令。", "error-msg");
+                        }
+                        break;
+
+                    case 'cat':
+                        if (!arg) {
+                            await printLine("語法錯誤。用法示例: cat project_l7e.log", "error-msg");
+                        } else if (arg === 'cognitive_drift.log' || arg === 'cognitive_drift') {
+                            await printLine(archives.cognitive_drift, "text-main");
+                        } else if (arg === 'project_l7e.log' || arg === 'project_l7e') {
+                            await printLine(archives.project_l7e, "text-main");
+                        } else if (arg === 'VISUAL_SIGNAL_MATRIX.dat' || arg === 'VISUAL_SIGNAL_MATRIX') {
+                            if (localStorage.getItem("l7e_leak_decrypted") === "true") {
+                                await printLine("【高能視覺訊號重組完畢】\n狀態：等待物理傳輸中（PREPARING VISUAL TRANSMISSION...）\n\n『第一層帷幕即將揭開。』\n我們正在嘗試將該區域的【首幅意象圖（First Poster）】同步至此端點。\n請密切注意官方後續信號投放。當光譜對齊之時，真相將浮出水面。", "gold-msg");
+                            } else {
+                                await printLine("權限拒絕。該數據為視覺矩陣，未經解密無法強行讀取。", "error-msg");
+                            }
+                        } else {
+                            await printLine(`找不到名為 '${arg}' 的數據包。`, "error-msg");
+                        }
+                        break;
+
+                    case 'decrypt':
+                        if (!arg) {
+                            await printLine("請輸入解密金鑰。提示：此處人們唯一可能迎來的悲劇結局是什麼？", "gold-msg");
+                        } else if (arg.toLowerCase() === 'burnout' || arg.toLowerCase() === '燃盡') {
+                            localStorage.setItem("l7e_leak_decrypted", "true");
+                            document.getElementById('sync-status').textContent = "SIGNAL: CAPTURED";
+                            document.getElementById('sync-status').style.color = "#00ff00";
+                            await printLine("==========================================", "gold-msg", 50);
+                            await printLine("【金鑰比對成功】未知視覺干擾源已成功鎖定。", "gold-msg", 100);
+                            await printLine("隱藏節點 [ VISUAL_SIGNAL_MATRIX.dat ] 已開放讀取權限。", "gold-msg", 100);
+                            await printLine("==========================================", "gold-msg", 50);
+                        } else {
+                            await printLine("【比對失敗】未知錯誤。頻率未對齊。", "error-msg");
+                        }
+                        break;
+
+                    case 'clear':
+                        output.innerHTML = '';
+                        break;
+
+                    default:
+                        await printLine(`無此指令: '${cmd}'。輸入 'help' 取得可用指令。`, "error-msg");
+                        break;
+                }
+            }
+        });
+
+        document.addEventListener('click', () => {
+            if (!input.disabled) input.focus();
+        });
+
+        playBoot();
+    </script>
+</body>
+</html>
