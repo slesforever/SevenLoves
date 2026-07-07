@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERMINAL // INTRUSION_LOG</title>
+    <title>L7E // RESTRICTED_STREAM</title>
     <style>
         :root {
-            --bg-color: #050505;
-            --term-color: #7a8a7a; /* 冰冷、無生機的灰綠色 */
-            --alert-color: #a34747; /* 警報暗紅 */
-            --unlock-color: #c99738; /* 解鎖金 */
-            --text-color: #bbbbbb;
+            --bg-color: #060606;
+            --term-gray: #555555;   /* 壓抑的死寂灰 */
+            --term-light: #b5b5b5;  /* 正常文字 */
+            --term-alert: #7c2222;  /* 暗紅警告 */
+            --term-accent: #9c8047; /* 隱約的暗金 */
         }
 
         * {
@@ -22,13 +22,12 @@
 
         body {
             background-color: var(--bg-color);
-            color: var(--text-color);
+            color: var(--term-light);
             overflow: hidden;
             height: 100vh;
             position: relative;
         }
 
-        /* CRT 螢幕濾鏡 */
         body::before {
             content: " ";
             display: block;
@@ -36,7 +35,7 @@
             top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
             z-index: 2;
-            background-size: 100% 3px, 5px 100%;
+            background-size: 100% 3px, 4px 100%;
             pointer-events: none;
         }
 
@@ -51,13 +50,13 @@
         }
 
         .header-bar {
-            border-bottom: 1px solid rgba(122, 138, 122, 0.2);
+            border-bottom: 1px solid rgba(85, 85, 85, 0.3);
             padding-bottom: 10px;
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             font-size: 0.8rem;
-            color: var(--term-color);
+            color: var(--term-gray);
             letter-spacing: 2px;
         }
 
@@ -68,39 +67,52 @@
         }
 
         .output-area::-webkit-scrollbar { width: 3px; }
-        .output-area::-webkit-scrollbar-thumb { background: var(--term-color); }
+        .output-area::-webkit-scrollbar-thumb { background: var(--term-gray); }
 
         .line {
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             line-height: 1.5;
             white-space: pre-wrap;
             word-break: break-all;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
-        .sys-mode { color: var(--term-color); }
-        .alert-mode { color: var(--alert-color); font-weight: bold; }
-        .unlock-mode { color: var(--unlock-color); text-shadow: 0 0 4px var(--unlock-color); }
-        .redacted { background-color: #222; color: #222; }
+        .sys-gray { color: var(--term-gray); }
+        .sys-alert { color: var(--term-alert); font-weight: bold; }
+        .sys-accent { color: var(--term-accent); }
+        
+        /* 讓亂碼區塊看起來更密集、更有干擾感 */
+        .noise-block {
+            color: #2a2a2a;
+            letter-spacing: -1px;
+            line-height: 1.2;
+            margin: 5px 0;
+        }
+        .anomaly {
+            color: #888888;
+            font-weight: bold;
+            background: rgba(255,255,255,0.02);
+            padding: 0 2px;
+        }
 
         .input-line {
             display: flex;
             align-items: center;
-            border-top: 1px solid rgba(122, 138, 122, 0.1);
+            border-top: 1px solid rgba(85, 85, 85, 0.1);
             padding-top: 15px;
         }
 
         .prompt {
-            color: var(--term-color);
-            margin-right: 12px;
+            color: var(--term-gray);
+            margin-right: 10px;
         }
 
         #cmd-input {
             background: transparent;
             border: none;
-            color: var(--text-color);
+            color: var(--term-light);
             font-family: inherit;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             flex-grow: 1;
             outline: none;
         }
@@ -110,14 +122,14 @@
 
     <div class="terminal-container">
         <div class="header-bar">
-            <span>NODE_ID: ERROR_RECV_0x00F</span>
-            <span id="sync-status">LINK: CORRUPTED</span>
+            <span>OFFLINE_RECEIVER://PORT_ERROR</span>
+            <span id="sync-status">SCAN_MODE: PASSIVE</span>
         </div>
 
         <div class="output-area" id="output"></div>
 
         <div class="input-line">
-            <span class="prompt">>></span>
+            <span class="prompt">guest@l7e_isolated_nodes:#</span>
             <input type="text" id="cmd-input" autofocus autocomplete="off" spellcheck="false">
         </div>
     </div>
@@ -126,19 +138,29 @@
         const output = document.getElementById('output');
         const input = document.getElementById('cmd-input');
         
-        // 破碎且充滿進制密碼的檔案
+        // 亂碼與規律干擾設計 (無任何實質劇透，純粹靠結構異常讓玩家猜測)
         const archives = {
-            "sys_status": `[MEM_DUMP] -------------------------------------\nCORE_STATE: HALT\nCOGNITIVE_ARRAY: <span class="redacted">████████</span>\nERROR_CODE: 0x7E\n\n系統常數已失真。底層物理規則出現維度崩塌跡象。\n偵測到未知的二維（2D）數據流試圖強行侵蝕現實。`,
-            "leak_0x7f": `[RAW_INTRUSION_DATA] ---------------------------\n警告：此檔案包含未重組的高危頻率。\n\n[ADDR]      [HEX DATA]                [ASCII]\n0x0010      4c 37 45 5f 49 4e 49 54   ????????\n0x0018      <span class="redacted">██ ██ ██ ██ ██ ██ ██ ██</span>   ********\n\n【提示】偵測到系統防護層。請將 0x0010 處的 16 進位數據（HEX）轉換為文字字串（String），並使用 [ decrypt ] 指令提交以解鎖主通道。`
+            "node_01": `<div class="noise-block">0000FF00 45A2C3EE 99001122 FFEEAA22 0000FF00 45A2C3EE
+0000FF00 45A2C3EE 99001122 <span class="anomaly">[d/.../]</span> 0000FF00 45A2C3EE
+0000FF00 45A2C3EE 99001122 FFEEAA22 0000FF00 45A2C3EE
+0000FF00 45A2C3EE 99001122 FFEEAA22 0000FF00 45A2C3EE</div>`,
+
+            "node_02": `<div class="noise-block">▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒<span class="anomaly">[dates/]</span>▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒</div>`,
+
+            "node_03": `<div class="noise-block">ERR_OVERFLOW: STACK_LOG_DUMP_REJECTED_BY_COGNITIVE_SHIELD
+ERR_OVERFLOW: STACK_LOG_DUMP_REJECTED_BY_COGNITIVE_SHIELD
+ERR_OVERFLOW: <span class="anomaly">[$!#%/)/(-.logs]</span>_REJECTED_BY_COGNITIVE_SHIELD
+ERR_OVERFLOW: STACK_LOG_DUMP_REJECTED_BY_COGNITIVE_SHIELD</div>`
         };
 
         const bootSequence = [
-            { text: "STTR: OVERFLOW_DETECTED...", type: "sys-mode", delay: 200 },
-            { text: "FATAL: CORE DATA UNREADABLE. SWITCHING TO RAW TERMINAL.", type: "alert-mode", delay: 400 },
-            { text: "--------------------------------------------------", type: "sys-mode", delay: 100 },
-            { text: "外部信號攔截成功。當前節點處於唯讀隔離狀態。", type: "sys-mode", delay: 200 },
-            { text: "輸入 [ help ] 查看基本可用緊急指令。", type: "sys-mode", delay: 100 },
-            { text: "--------------------------------------------------", type: "sys-mode", delay: 100 }
+            { text: "SIGNAL LOSS: 98.2%", type: "sys-gray", delay: 100 },
+            { text: "STVAL_LOCAL_CORE... FAILED.", type: "sys-alert", delay: 300 },
+            { text: "正在切斷主動追蹤。改由監聽殘留快取暫存區...", type: "sys-gray", delay: 200 },
+            { text: "目前殘留數據已載入。輸入 [ help ] 檢視基礎可用控制指令。", type: "sys-gray", delay: 100 },
+            { text: "--------------------------------------------------", type: "sys-gray", delay: 50 }
         ];
 
         async function playBoot() {
@@ -149,14 +171,14 @@
             input.disabled = false;
             input.focus();
             
-            if(localStorage.getItem("l7e_pre_decrypted") === "true") {
-                document.getElementById('sync-status').textContent = "LINK: ALIGNED";
-                document.getElementById('sync-status').style.color = "var(--unlock-color)";
-                printLine("\n[通道保持解鎖狀態。視覺頻率矩陣就緒。]", "unlock-mode");
+            if(localStorage.getItem("l7e_ghost_linked") === "true") {
+                document.getElementById('sync-status').textContent = "SCAN_MODE: TUNED";
+                document.getElementById('sync-status').style.color = "var(--term-accent)";
+                printLine("\n[偵測到本地歷史頻率鎖定紀錄。視覺矩陣接收口保持開放。]", "sys-accent");
             }
         }
 
-        function printLine(text, className = "sys-mode", delay = 0) {
+        function printLine(text, className = "sys-gray", delay = 0) {
             return new Promise((resolve) => {
                 setTimeout(() => {
                     const line = document.createElement('div');
@@ -175,62 +197,53 @@
                 input.value = '';
                 if (!rawInput) return;
 
-                await printLine(`>> ${rawInput}`, "text-color");
+                await printLine(`guest@l7e_isolated_nodes:# ${rawInput}`, "term-light");
+                
+                // 解析指令與參數
                 const parts = rawInput.split(' ');
                 const cmd = parts[0].toLowerCase();
-                const arg = parts.slice(1).join(' ');
+                // 這裡保留完整的參數字串（包含特殊字元與斜線路徑）
+                const arg = parts.slice(1).join(' ').trim();
 
                 switch (cmd) {
                     case 'help':
-                        await printLine("緊急備用指令：", "sys-mode");
-                        await printLine("  ls           - 掃描當前緩衝區的損壞數據包", "sys-mode");
-                        await printLine("  cat [名稱]   - 傾印指定數據包內容", "sys-mode");
-                        await printLine("  decrypt [碼] - 提交重組後的解密字串", "sys-mode");
-                        await printLine("  clear        - 清空終端機螢幕", "sys-mode");
+                        await printLine("現存可用系統指令：", "sys-gray");
+                        await printLine("  ls               - 列出本節點快取記憶體中的檔案碎塊", "sys-gray");
+                        await printLine("  cat [檔案/路徑]  - 讀取指定的碎塊或引導定位目標", "sys-gray");
+                        await printLine("  clear            - 清理終端緩衝區", "sys-gray");
                         break;
 
                     case 'ls':
-                        await printLine("暫存記憶體區塊：", "sys-mode");
-                        await printLine("  sys_status.log", "sys-mode");
-                        await printLine("  leak_0x7f.dat", "sys-mode");
-                        if (localStorage.getItem("l7e_pre_decrypted") === "true") {
-                            await printLine("  VISUAL_BROADCAST.stream (已解鎖)", "unlock-mode");
-                        } else {
-                            await printLine("  [??] 偵測到受阻斷的加密訊號源，需要主通道權限。", "alert-mode");
-                        }
+                        await printLine("目前快取碎塊清單：", "sys-gray");
+                        await printLine("  node_01.err", "sys-gray");
+                        await printLine("  node_02.raw", "sys-gray");
+                        await printLine("  node_03.tmp", "sys-gray");
                         break;
 
                     case 'cat':
                         if (!arg) {
-                            await printLine("錯誤：未知傾印目標。", "alert-mode");
-                        } else if (arg === 'sys_status.log' || arg === 'sys_status') {
-                            await printLine(archives.sys_status, "text-color");
-                        } else if (arg === 'leak_0x7f.dat' || arg === 'leak_0x7f') {
-                            await printLine(archives.leak_0x7f, "text-color");
-                        } else if (arg === 'VISUAL_BROADCAST.stream' || arg === 'VISUAL_BROADCAST') {
-                            if (localStorage.getItem("l7e_pre_decrypted") === "true") {
-                                await printLine("【外部視覺信號接收端點 // 建立成功】\n\n訊號類別：FIRST_VISUAL_POSTER\n封包狀態：等待物理廣播（PENDING_BROADCAST）\n\n[觀測日誌]\n巨幅意象圖層已在端點後方完成渲染。\n光譜尚未對齊。當官方正式投放具象信號之日，此處的盲區將同步點亮。\n請維持此端點連線。", "unlock-mode");
-                            } else {
-                                await printLine("權限不足。拒絕讀取未對齊的數據流。", "alert-mode");
-                            }
+                            await printLine("系統提示：必須指定讀取對象。例如: cat node_01.err", "sys-alert");
+                        } else if (arg === 'node_01.err' || arg === 'node_01') {
+                            await printLine(archives.node_01, "term-light");
+                        } else if (arg === 'node_02.raw' || arg === 'node_02') {
+                            await printLine(archives.node_02, "term-light");
+                        } else if (arg === 'node_03.tmp' || arg === 'node_03') {
+                            await printLine(archives.node_03, "term-light");
+                        } 
+                        // 【核心解謎點】：盲打輸入拼接出來的隱藏路徑
+                        else if (arg === 'd/.../dates/$!#%/)/(-.logs' || arg === 'd/.../dates/$!#%/)/(-.logs') {
+                            localStorage.setItem("l7e_ghost_linked", "true");
+                            document.getElementById('sync-status').textContent = "SCAN_MODE: TUNED";
+                            document.getElementById('sync-status').style.color = "var(--term-accent)";
+                            
+                            await printLine("==================================================", "sys-accent", 50);
+                            await printLine("【SUCCESS // GHOST_PATH_IDENTIFIED】幽靈路徑對齊成功。", "sys-accent", 100);
+                            await printLine("底層視覺數據流（VISUAL_STREAM）接收端點已強行激活。", "sys-accent", 100);
+                            await printLine("\n[狀態：等待母體物理廣播中 (AWAITING PHYSICAL BROADCAST)]", "term-light", 150);
+                            await printLine("終端已就位。當第一幅意象（First Poster）於現實世界投放時，這裡將同步解鎖像素矩陣。", "sys-accent", 200);
+                            await printLine("==================================================", "sys-accent", 50);
                         } else {
-                            await printLine(`錯誤：找不到區塊 '${arg}'`, "alert-mode");
-                        }
-                        break;
-
-                    case 'decrypt':
-                        if (!arg) {
-                            await printLine("錯誤：未輸入解密字串。用法: decrypt [字串]", "alert-mode");
-                        } else if (arg.toUpperCase() === 'L7E_INIT') {
-                            localStorage.setItem("l7e_pre_decrypted", "true");
-                            document.getElementById('sync-status').textContent = "LINK: ALIGNED";
-                            document.getElementById('sync-status').style.color = "var(--unlock-color)";
-                            await printLine("==========================================", "unlock-mode", 50);
-                            await printLine("【HEX 解碼驗證通過】通道共振頻率已對齊。", "unlock-mode", 150);
-                            await printLine("解鎖高維視覺流：[ VISUAL_BROADCAST.stream ]", "unlock-mode", 150);
-                            await printLine("==========================================", "unlock-mode", 50);
-                        } else {
-                            await printLine("【驗證失敗】解碼字串與內存不符。認知防護未解除。", "alert-mode");
+                            await printLine(`錯誤：找不到路徑或檔案 '${arg}'。該記憶體區塊可能未被指配。`, "sys-alert");
                         }
                         break;
 
@@ -239,7 +252,7 @@
                         break;
 
                     default:
-                        await printLine(`指令未定義: '${cmd}'。`, "alert-mode");
+                        await printLine(`無此指令: '${cmd}'。可輸入 'help' 獲取系統核心命令。`, "sys-alert");
                         break;
                 }
             }
