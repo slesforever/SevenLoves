@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>L7E // RESTRICTED_STREAM</title>
+    <title>L7E // DEEP_TUNING_NODE</title>
     <style>
         :root {
-            --bg-color: #060606;
-            --term-gray: #555555;   /* 壓抑的死寂灰 */
-            --term-light: #b5b5b5;  /* 正常文字 */
-            --term-alert: #7c2222;  /* 暗紅警告 */
-            --term-accent: #9c8047; /* 隱約的暗金 */
+            --bg-color: #040404;
+            --term-dim: #444444;     /* 幾乎熄滅的死灰色 */
+            --term-plain: #aaaaaa;   /* 基礎冷白 */
+            --term-alert: #801a1a;   /* 鐵鏽暗紅 */
+            --term-glow: #a6854e;    /* 幽暗的古銅金 */
         }
 
         * {
@@ -22,20 +22,21 @@
 
         body {
             background-color: var(--bg-color);
-            color: var(--term-light);
+            color: var(--term-plain);
             overflow: hidden;
             height: 100vh;
             position: relative;
         }
 
+        /* CRT 網格微弱濾鏡 */
         body::before {
             content: " ";
             display: block;
             position: absolute;
             top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
-            z-index: 2;
-            background-size: 100% 3px, 4px 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.5) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.01), rgba(0, 255, 0, 0.005), rgba(0, 0, 255, 0.01));
+            z-index: 5;
+            background-size: 100% 3px, 5px 100%;
             pointer-events: none;
         }
 
@@ -50,14 +51,14 @@
         }
 
         .header-bar {
-            border-bottom: 1px solid rgba(85, 85, 85, 0.3);
-            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(85, 85, 85, 0.2);
+            padding-bottom: 12px;
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
-            font-size: 0.8rem;
-            color: var(--term-gray);
-            letter-spacing: 2px;
+            font-size: 0.75rem;
+            color: var(--term-dim);
+            letter-spacing: 3px;
         }
 
         .output-area {
@@ -66,33 +67,28 @@
             margin-bottom: 15px;
         }
 
-        .output-area::-webkit-scrollbar { width: 3px; }
-        .output-area::-webkit-scrollbar-thumb { background: var(--term-gray); }
+        .output-area::-webkit-scrollbar { width: 2px; }
+        .output-area::-webkit-scrollbar-thumb { background: var(--term-dim); }
 
         .line {
             margin-bottom: 6px;
-            line-height: 1.5;
+            line-height: 1.6;
             white-space: pre-wrap;
             word-break: break-all;
             font-size: 0.85rem;
         }
 
-        .sys-gray { color: var(--term-gray); }
+        .sys-dim { color: var(--term-dim); }
         .sys-alert { color: var(--term-alert); font-weight: bold; }
-        .sys-accent { color: var(--term-accent); }
+        .sys-glow { color: var(--term-glow); text-shadow: 0 0 4px rgba(166, 133, 78, 0.4); }
         
-        /* 讓亂碼區塊看起來更密集、更有干擾感 */
-        .noise-block {
-            color: #2a2a2a;
-            letter-spacing: -1px;
-            line-height: 1.2;
-            margin: 5px 0;
-        }
-        .anomaly {
-            color: #888888;
-            font-weight: bold;
-            background: rgba(255,255,255,0.02);
-            padding: 0 2px;
+        .code-block {
+            background: rgba(255,255,255,0.01);
+            padding: 12px;
+            margin: 8px 0;
+            border-left: 2px solid #333;
+            color: #777;
+            font-size: 0.8rem;
         }
 
         .input-line {
@@ -103,14 +99,14 @@
         }
 
         .prompt {
-            color: var(--term-gray);
+            color: var(--term-dim);
             margin-right: 10px;
         }
 
         #cmd-input {
             background: transparent;
             border: none;
-            color: var(--term-light);
+            color: var(--term-plain);
             font-family: inherit;
             font-size: 0.9rem;
             flex-grow: 1;
@@ -122,14 +118,14 @@
 
     <div class="terminal-container">
         <div class="header-bar">
-            <span>OFFLINE_RECEIVER://PORT_ERROR</span>
-            <span id="sync-status">SCAN_MODE: PASSIVE</span>
+            <span>NODE://DEEP_DUMP_RECEIVER</span>
+            <span id="sync-status">STATION: INT_RAW_LISTEN</span>
         </div>
 
         <div class="output-area" id="output"></div>
 
         <div class="input-line">
-            <span class="prompt">guest@l7e_isolated_nodes:#</span>
+            <span class="prompt">operator@l7e_isolated_node_6:#</span>
             <input type="text" id="cmd-input" autofocus autocomplete="off" spellcheck="false">
         </div>
     </div>
@@ -138,29 +134,41 @@
         const output = document.getElementById('output');
         const input = document.getElementById('cmd-input');
         
-        // 亂碼與規律干擾設計 (無任何實質劇透，純粹靠結構異常讓玩家猜測)
+        // 5 個碎片檔案內容定義
         const archives = {
-            "node_01": `<div class="noise-block">0000FF00 45A2C3EE 99001122 FFEEAA22 0000FF00 45A2C3EE
-0000FF00 45A2C3EE 99001122 <span class="anomaly">[d/.../]</span> 0000FF00 45A2C3EE
-0000FF00 45A2C3EE 99001122 FFEEAA22 0000FF00 45A2C3EE
-0000FF00 45A2C3EE 99001122 FFEEAA22 0000FF00 45A2C3EE</div>`,
+            "sys_net": `【NET_LINE_CAPTURE // 180ms FEED】\n系統底層通訊網截收報告。發現不自然重複高頻噪聲，疑似脈衝調變：\n<div class="code-block">SIGNAL_RAW: -..  -..-.  .-.-.-  .-.-.-  .-.-.-  -..-.</div>\n[警語] 無法與當前字典對齊。需手動將調變訊號進行音碼映射。`,
 
-            "node_02": `<div class="noise-block">▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
-▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒<span class="anomaly">[dates/]</span>▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
-▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒</div>`,
+            "sector_08": `【PHYSICAL_SECTOR_08 // DUMP】\n暫存記憶體第 08 磁區塊出錯。遺留未定義之二進位數據位元流：\n<div class="code-block">01100100 01100001 01110100 01100101 01110011 00101111</div>\n[錯誤] 數據校驗失敗，無法直接轉換為物理系統變數。`,
 
-            "node_03": `<div class="noise-block">ERR_OVERFLOW: STACK_LOG_DUMP_REJECTED_BY_COGNITIVE_SHIELD
-ERR_OVERFLOW: STACK_LOG_DUMP_REJECTED_BY_COGNITIVE_SHIELD
-ERR_OVERFLOW: <span class="anomaly">[$!#%/)/(-.logs]</span>_REJECTED_BY_COGNITIVE_SHIELD
-ERR_OVERFLOW: STACK_LOG_DUMP_REJECTED_BY_COGNITIVE_SHIELD</div>`
+            "b64_dump": `【STORAGE_RESERVED // INTERCEPT】\n高維度隱蔽封包。標頭已被抹除，僅留下採用標準 64 位基數雜湊編碼的字串特徵：\n<div class="code-block">DATA_STREAM: JCEjJS8=</div>\n[提示] 系統無法辨識非文字結構符號，拒絕執行解碼。`,
+
+            "matrix_shift": `【COGNITIVE_MATRIX // SHIFT_CONFIG】\n觀測到流動數據矩陣發生相位偏移，偏移常數已鎖定：\n<div class="code-block">SHIFT_KEY: 13\nENCRYPTED_VECTOR: CNEG_4_VF_)/</div>\n[注意] 符號物理特徵不受偏移常數影響，請保持符號原始狀態。`,
+
+            "parity_rev": `【PARITY_LOG // STACK_OVERFLOW】\n堆疊緩衝區溢位。末端反向迴路（Reverse Loop）異常啟動，導致部分日誌流發生位元倒置反轉：\n<div class="code-block">ERR_0x992A: CRITICAL_STREAM_REVERSED -> [ sgol.- ( ]</div>\n[警告] 迴路損壞嚴重，請忽略末端雜訊，由右至左手動重構原文字串。`
         };
 
+        // 成功盲打敲入隱藏幽靈路徑時顯示的「結構毀損海報文字矩陣」
+        const hiddenPosterFile = `【SUCCESS // GHOST_PATH_DECRYPTED】\n路徑共振吻合。正在強行解析封鎖之視覺矩陣資料流...\n\n<div class="sys-glow">[VISUAL_STREAM_DECOVERY_STATUS: 14.82% - LOCKED]</div>\n<div class="sys-dim">
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒████████████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒███████▒▒▒▒▒▒▒███████▒▒▒▒▒▒▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██████▒▒ [REDACTED] ▒▒██████▒▒▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒██████▒▒  W A R N I N G ▒▒██████▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒██████▒▒  DO NOT SEEK   ▒▒██████▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██████▒▒  THE TRUTH   ▒▒██████▒▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒███████▒▒▒▒▒▒▒███████▒▒▒▒▒▒▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒████████████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒</div>\n
+<span class="sys-alert">[警告：全網底層渲染拒絕]</span>\n本機偵測到大範圍物理限制阻斷。在全網頻率「首次對齊（First Poster Reveal）」前，主機拒絕還原完整圖像像素。\n\n【傳輸識別碼：L7E_PHASE_0_STEADY】\n已成功將本端點與視覺源對齊。請存留此路徑。當首張意象海報於現實中投放時，此處像素矩陣將被強行覆寫還原。`;
+
         const bootSequence = [
-            { text: "SIGNAL LOSS: 98.2%", type: "sys-gray", delay: 100 },
-            { text: "STVAL_LOCAL_CORE... FAILED.", type: "sys-alert", delay: 300 },
-            { text: "正在切斷主動追蹤。改由監聽殘留快取暫存區...", type: "sys-gray", delay: 200 },
-            { text: "目前殘留數據已載入。輸入 [ help ] 檢視基礎可用控制指令。", type: "sys-gray", delay: 100 },
-            { text: "--------------------------------------------------", type: "sys-gray", delay: 50 }
+            { text: "SIGNAL_STRENGTH: MINIMAL (1.8%)", type: "sys-dim", delay: 100 },
+            { text: "COGNITIVE_SHIELD: HIGH_RESISTANCE", type: "sys-alert", delay: 250 },
+            { text: "已切斷主動呼叫，終端進入被動接收監聽狀態...", type: "sys-dim", delay: 200 },
+            { text: "成功撈取到 5 組斷裂快取封包。輸入 [ help ] 檢視可用控制指令。", type: "sys-dim", delay: 100 },
+            { text: "==================================================", type: "sys-dim", delay: 50 }
         ];
 
         async function playBoot() {
@@ -171,14 +179,14 @@ ERR_OVERFLOW: STACK_LOG_DUMP_REJECTED_BY_COGNITIVE_SHIELD</div>`
             input.disabled = false;
             input.focus();
             
-            if(localStorage.getItem("l7e_ghost_linked") === "true") {
-                document.getElementById('sync-status').textContent = "SCAN_MODE: TUNED";
-                document.getElementById('sync-status').style.color = "var(--term-accent)";
-                printLine("\n[偵測到本地歷史頻率鎖定紀錄。視覺矩陣接收口保持開放。]", "sys-accent");
+            if(localStorage.getItem("l7e_ghost_linked_v2") === "true") {
+                document.getElementById('sync-status').textContent = "STATION: TUNED_LINK";
+                document.getElementById('sync-status').style.color = "var(--term-glow)";
+                printLine("\n[本地歷史對齊狀態驗證成功。視覺接收口保持開啟。]", "sys-glow");
             }
         }
 
-        function printLine(text, className = "sys-gray", delay = 0) {
+        function printLine(text, className = "sys-dim", delay = 0) {
             return new Promise((resolve) => {
                 setTimeout(() => {
                     const line = document.createElement('div');
@@ -197,53 +205,52 @@ ERR_OVERFLOW: STACK_LOG_DUMP_REJECTED_BY_COGNITIVE_SHIELD</div>`
                 input.value = '';
                 if (!rawInput) return;
 
-                await printLine(`guest@l7e_isolated_nodes:# ${rawInput}`, "term-light");
+                await printLine(`operator@l7e_isolated_node_6:# ${rawInput}`, "term-plain");
                 
-                // 解析指令與參數
                 const parts = rawInput.split(' ');
                 const cmd = parts[0].toLowerCase();
-                // 這裡保留完整的參數字串（包含特殊字元與斜線路徑）
                 const arg = parts.slice(1).join(' ').trim();
 
                 switch (cmd) {
                     case 'help':
-                        await printLine("現存可用系統指令：", "sys-gray");
-                        await printLine("  ls               - 列出本節點快取記憶體中的檔案碎塊", "sys-gray");
-                        await printLine("  cat [檔案/路徑]  - 讀取指定的碎塊或引導定位目標", "sys-gray");
-                        await printLine("  clear            - 清理終端緩衝區", "sys-gray");
+                        await printLine("基礎可用指令：", "sys-dim");
+                        await printLine("  ls                 - 檢視殘留快取檔案列表", "sys-dim");
+                        await printLine("  cat [檔案/路徑]    - 讀取指定的碎塊檔案", "sys-dim");
+                        await printLine("  clear              - 清除終端螢幕緩衝", "sys-dim");
                         break;
 
                     case 'ls':
-                        await printLine("目前快取碎塊清單：", "sys-gray");
-                        await printLine("  node_01.err", "sys-gray");
-                        await printLine("  node_02.raw", "sys-gray");
-                        await printLine("  node_03.tmp", "sys-gray");
+                        await printLine("快取記憶體碎塊清單：", "sys-dim");
+                        await printLine("  sys_net.chk", "sys-dim");
+                        await printLine("  sector_08.bin", "sys-dim");
+                        await printLine("  b64_dump.vhd", "sys-dim");
+                        await printLine("  matrix_shift.cfg", "sys-dim");
+                        await printLine("  parity_rev.err", "sys-dim");
                         break;
 
                     case 'cat':
                         if (!arg) {
-                            await printLine("系統提示：必須指定讀取對象。例如: cat node_01.err", "sys-alert");
-                        } else if (arg === 'node_01.err' || arg === 'node_01') {
-                            await printLine(archives.node_01, "term-light");
-                        } else if (arg === 'node_02.raw' || arg === 'node_02') {
-                            await printLine(archives.node_02, "term-light");
-                        } else if (arg === 'node_03.tmp' || arg === 'node_03') {
-                            await printLine(archives.node_03, "term-light");
+                            await printLine("語法錯誤：未指配目標對象。例如: cat sys_net.chk", "sys-alert");
+                        } else if (arg === 'sys_net.chk' || arg === 'sys_net') {
+                            await printLine(archives.sys_net, "term-plain");
+                        } else if (arg === 'sector_08.bin' || arg === 'sector_08') {
+                            await printLine(archives.sector_08, "term-plain");
+                        } else if (arg === 'b64_dump.vhd' || arg === 'b64_dump') {
+                            await printLine(archives.b64_dump, "term-plain");
+                        } else if (arg === 'matrix_shift.cfg' || arg === 'matrix_shift') {
+                            await printLine(archives.matrix_shift, "term-plain");
+                        } else if (arg === 'parity_rev.err' || arg === 'parity_rev') {
+                            await printLine(archives.parity_rev, "term-plain");
                         } 
-                        // 【核心解謎點】：盲打輸入拼接出來的隱藏路徑
-                        else if (arg === 'd/.../dates/$!#%/)/(-.logs' || arg === 'd/.../dates/$!#%/)/(-.logs') {
-                            localStorage.setItem("l7e_ghost_linked", "true");
-                            document.getElementById('sync-status').textContent = "SCAN_MODE: TUNED";
-                            document.getElementById('sync-status').style.color = "var(--term-accent)";
+                        // 【盲打盲猜的絕對隱藏幽靈路徑】
+                        else if (arg === 'd/.../dates/$!#%/)/(-.logs') {
+                            localStorage.setItem("l7e_ghost_linked_v2", "true");
+                            document.getElementById('sync-status').textContent = "STATION: TUNED_LINK";
+                            document.getElementById('sync-status').style.color = "var(--term-glow)";
                             
-                            await printLine("==================================================", "sys-accent", 50);
-                            await printLine("【SUCCESS // GHOST_PATH_IDENTIFIED】幽靈路徑對齊成功。", "sys-accent", 100);
-                            await printLine("底層視覺數據流（VISUAL_STREAM）接收端點已強行激活。", "sys-accent", 100);
-                            await printLine("\n[狀態：等待母體物理廣播中 (AWAITING PHYSICAL BROADCAST)]", "term-light", 150);
-                            await printLine("終端已就位。當第一幅意象（First Poster）於現實世界投放時，這裡將同步解鎖像素矩陣。", "sys-accent", 200);
-                            await printLine("==================================================", "sys-accent", 50);
+                            await printLine(hiddenPosterFile, "term-plain", 100);
                         } else {
-                            await printLine(`錯誤：找不到路徑或檔案 '${arg}'。該記憶體區塊可能未被指配。`, "sys-alert");
+                            await printLine(`錯誤：指定之路徑或檔案 '${arg}' 未配置，或該位址查無有效數據。`, "sys-alert");
                         }
                         break;
 
@@ -252,7 +259,7 @@ ERR_OVERFLOW: STACK_LOG_DUMP_REJECTED_BY_COGNITIVE_SHIELD</div>`
                         break;
 
                     default:
-                        await printLine(`無此指令: '${cmd}'。可輸入 'help' 獲取系統核心命令。`, "sys-alert");
+                        await printLine(`指令未定義: '${cmd}'。輸入 'help' 檢視可用核心指令。`, "sys-alert");
                         break;
                 }
             }
